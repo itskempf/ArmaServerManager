@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ArmaServerManager (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ArmaServerManager (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

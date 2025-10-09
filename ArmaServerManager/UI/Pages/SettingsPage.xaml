@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ArmaServerManager.UI.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="16">
+            <TextBlock Text="Settings" FontSize="24" FontWeight="Bold"/>
+            
+            <!-- General Settings -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="General" FontSize="16" FontWeight="SemiBold"/>
+                    <TextBlock Text="SteamCMD Path:" Margin="0,0,0,4"/>
+                    <TextBox x:Name="SteamCmdPathBox" PlaceholderText="Path to steamcmd.exe"/>
+                    <TextBlock Text="Steam Username:" Margin="0,0,0,4"/>
+                    <TextBox x:Name="SteamUsernameBox" PlaceholderText="Steam username"/>
+                    
+                    <TextBlock Text="Theme:" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="ThemeComboBox">
+                        <ComboBoxItem Content="Light"/>
+                        <ComboBoxItem Content="Dark" IsSelected="True"/>
+                        <ComboBoxItem Content="Default"/>
+                    </ComboBox>
+                    
+                    <TextBlock Text="Steam Branch:" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="BranchComboBox">
+                        <ComboBoxItem Content="Stable" IsSelected="True"/>
+                        <ComboBoxItem Content="Dev"/>
+                        <ComboBoxItem Content="Community"/>
+                    </ComboBox>
+                </StackPanel>
+            </Border>
+            
+            <!-- Plugins -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                <StackPanel Spacing="12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Plugins" FontSize="16" FontWeight="SemiBold"/>
+                        <Button Grid.Column="1" Content="Reload Plugins" Click="ReloadPlugins_Click"/>
+                    </Grid>
+                    
+                    <ListView x:Name="PluginsList" MaxHeight="200">
+                        <ListViewItem>
+                            <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="12" Margin="0,2">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="No plugins loaded" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Place plugin DLLs in the Plugins folder" Opacity="0.7" FontSize="12"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="v1.0" VerticalAlignment="Center" FontSize="12"/>
+                                        <Button Content="Execute" IsEnabled="False"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </ListViewItem>
+                    </ListView>
+                </StackPanel>
+            </Border>
+            
+            <!-- Actions -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Actions" FontSize="16" FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button Content="Save Settings" Style="{StaticResource AccentButtonStyle}" Click="SaveSettings_Click"/>
+                        <Button Content="View Logs" Click="ViewLogs_Click"/>
+                        <Button Content="Open Plugins Folder" Click="OpenPluginsFolder_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

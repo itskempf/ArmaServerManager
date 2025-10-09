@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ArmaServerManager.UI.Pages.ModsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <StackPanel Margin="24">
+        <TextBlock Text="Mod Management" FontSize="24" FontWeight="Bold" Margin="0,0,0,16"/>
+        
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
+            <TextBox x:Name="WorkshopIdBox" PlaceholderText="Enter Steam Workshop ID" MinWidth="200"/>
+            <Button Content="Download" Style="{StaticResource AccentButtonStyle}" Click="DownloadMod_Click"/>
+            <Button Content="Update All" Click="UpdateAll_Click"/>
+            <Button Content="Add Local Mod" Click="AddLocalMod_Click"/>
+        </StackPanel>
+
+        <ListView x:Name="ModsList" ItemsSource="{Binding Mods}" MaxHeight="400"/>
+    </StackPanel>
+</Page>
