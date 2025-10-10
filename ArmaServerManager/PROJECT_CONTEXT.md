@@ -55,7 +55,7 @@ A **Windows desktop application** for managing Arma 3 dedicated servers using St
 
 ### CURRENT AI STATUS
 - **Amazon Q**: ⏳ STANDBY
-- **Gemini AI**: ✅ ACTIVE - Applying maintenance fixes.
+- **Gemini AI**: ⏳ STANDBY - Awaiting next task assignment.
 
 ### RECENT ACTIVITIES LOG
 ```
