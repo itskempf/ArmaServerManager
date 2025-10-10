@@ -8,12 +8,21 @@ using System.Threading.Tasks;
 
 namespace ArmaServerManager.Core;
 
+/// <summary>
+/// Manages creation, deletion, and import/export of mod presets.
+/// </summary>
 public class PresetManager
 {
     private readonly string _presetsPath;
     private readonly ModManager _modManager;
     private readonly LoggingService _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PresetManager"/> class.
+    /// </summary>
+    /// <param name="presetsPath">The directory where presets are stored.</param>
+    /// <param name="modManager">The manager for Arma mods.</param>
+    /// <param name="logger">The service for logging.</param>
     public PresetManager(string presetsPath, ModManager modManager, LoggingService logger)
     {
         _presetsPath = string.IsNullOrEmpty(presetsPath) ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Presets") : presetsPath;
@@ -22,6 +31,10 @@ public class PresetManager
         Directory.CreateDirectory(_presetsPath);
     }
 
+    /// <summary>
+    /// Saves a mod preset to a JSON file.
+    /// </summary>
+    /// <param name="preset">The preset to save.</param>
     public async Task SavePresetAsync(ModPreset preset)
     {
         try
@@ -38,6 +51,11 @@ public class PresetManager
         }
     }
 
+    /// <summary>
+    /// Loads a mod preset from a JSON file.
+    /// </summary>
+    /// <param name="presetName">The name of the preset to load.</param>
+    /// <returns>The loaded <see cref="ModPreset"/> or null if not found.</returns>
     public async Task<ModPreset?> LoadPresetAsync(string presetName)
     {
         try
@@ -55,14 +73,20 @@ public class PresetManager
         }
     }
     
+    /// <summary>
+    /// Exports a mod preset to an HTML file compatible with the Arma 3 launcher.
+    /// </summary>
+    /// <param name="preset">The preset to export.</param>
+    /// <returns>The file path of the exported HTML file.</returns>
     public async Task<string> ExportPresetToHtmlAsync(ModPreset preset)
     {
         try
         {
             var html = new StringBuilder();
-            html.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            // The HTML format is specifically structured for compatibility with the Arma 3 launcher.
+            html.AppendLine("<?xml version="1.0" encoding="utf-8"?>");
             html.AppendLine("<html>");
-            html.AppendLine($"<head><meta name=\"arma:Type\" content=\"preset\"/><meta name=\"arma:PresetName\" content=\"{preset.Name}\"/></head>");
+            html.AppendLine($"<head><meta name=\"arma:Type\" content=\"preset"/><meta name=\"arma:PresetName\" content=\"{preset.Name}\" /></head>");
             html.AppendLine("<body>");
             
             foreach (var modId in preset.ModIds)
@@ -83,6 +107,11 @@ public class PresetManager
         }
     }
     
+    /// <summary>
+    /// Imports a mod preset from an Arma 3 launcher HTML file.
+    /// </summary>
+    /// <param name="htmlFilePath">The path to the HTML preset file.</param>
+    /// <returns>The imported <see cref="ModPreset"/> or null if import fails.</returns>
     public async Task<ModPreset?> ImportPresetFromHtmlAsync(string htmlFilePath)
     {
         try
@@ -93,7 +122,7 @@ public class PresetManager
             var preset = new ModPreset();
             
             // Extract preset name from meta tag
-            var nameMatch = System.Text.RegularExpressions.Regex.Match(html, @"arma:PresetName""\s+content=""([^""]+)""");
+            var nameMatch = System.Text.RegularExpressions.Regex.Match(html, @"<meta name=\"arma:PresetName\" content=\"(.*?)\" />");
             if (nameMatch.Success)
             {
                 preset.Name = nameMatch.Groups[1].Value;
@@ -129,6 +158,11 @@ public class PresetManager
         }
     }
     
+    /// <summary>
+    /// Installs all mods included in a given preset.
+    /// </summary>
+    /// <param name="preset">The preset whose mods should be installed.</param>
+    /// <returns>True if all mods were scheduled for installation, otherwise false.</returns>
     public async Task<bool> InstallPresetModsAsync(ModPreset preset)
     {
         try
@@ -152,26 +186,53 @@ public class PresetManager
         }
     }
     
-    public string[] GetPresets()
+    /// <summary>
+    /// Gets a list of all available preset names.
+    /// </summary>
+    /// <returns>An array of preset names.</returns>
+    public async Task<string[]> GetPresetsAsync()
     {
-        return Directory.GetFiles(_presetsPath, "*.json")
+        return await Task.Run(() =>
+            Directory.GetFiles(_presetsPath, "*.json")
             .Select(Path.GetFileNameWithoutExtension)
             .Where(name => !string.IsNullOrEmpty(name))
-            .ToArray()!;
+            .ToArray()!);
     }
     
-    public void DeletePreset(string presetName)
+    /// <summary>
+    /// Deletes a preset file.
+    /// </summary>
+    /// <param name="presetName">The name of the preset to delete.</param>
+    public async Task DeletePresetAsync(string presetName)
     {
-        var presetFile = Path.Combine(_presetsPath, $"{presetName}.json");
-        if (File.Exists(presetFile))
-            File.Delete(presetFile);
+        await Task.Run(() =>
+        {
+            var presetFile = Path.Combine(_presetsPath, $"{presetName}.json");
+            if (File.Exists(presetFile))
+                File.Delete(presetFile);
+        });
     }
 }
 
+/// <summary>
+/// Represents a mod preset, which is a collection of mod IDs.
+/// </summary>
 public class ModPreset
 {
+    /// <summary>
+    /// Gets or sets the name of the preset.
+    /// </summary>
     public string Name { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the description of the preset.
+    /// </summary>
     public string Description { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the list of Steam Workshop IDs for the mods in this preset.
+    /// </summary>
     public List<string> ModIds { get; set; } = new();
+    /// <summary>
+    /// Gets or sets the creation date and time of the preset.
+    /// </summary>
     public DateTime Created { get; set; } = DateTime.Now;
 }
