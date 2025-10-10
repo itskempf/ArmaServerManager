@@ -36,7 +36,7 @@ A **Windows desktop application** for managing Arma 3 dedicated servers using St
 
 ## CRITICAL CONSTRAINTS
 - **NO HALLUCINATION**: Only work with actual existing code
-- **NO NEW FEATURES**: Project is feature-complete and production-ready
+- **NO NEW FEATURES**: Project is feature-complete and in production-ready
 - **MAINTENANCE ONLY**: Minor fixes, optimizations, or documentation updates
 - **STEAMCMD INTEGRATION**: All server/mod operations use real SteamCMD processes
 
@@ -55,10 +55,11 @@ A **Windows desktop application** for managing Arma 3 dedicated servers using St
 
 ### CURRENT AI STATUS
 - **Amazon Q**: ⏳ STANDBY
-- **Gemini AI**: ✅ ACTIVE - Investigating unused dependencies.
+- **Gemini AI**: ✅ ACTIVE - Performing general code review.
 
 ### RECENT ACTIVITIES LOG
 ```
+[2025-10-10] Gemini AI: Starting code review of Core services, beginning with ModManager.cs.
 [2025-10-10] Gemini AI: Removed unused Newtonsoft.Json package from .csproj.
 [2025-10-10] Gemini AI: Investigating potentially unused Newtonsoft.Json dependency.
 [2025-10-10] Gemini AI: Resolved CS1998 warning in `ServerManager.cs` by implementing proper async handling in `RemoveServerAsync`. Pushed fix to main.
