@@ -377,10 +377,10 @@ public class ServerManager
         }
     }
     
-    public async Task<bool> ValidateServerInstallation(string installPath)
+    public bool ValidateServerInstallation(string installPath)
     {
         var serverExe = Path.Combine(installPath, "arma3server_x64.exe");
-        return await Task.Run(() => File.Exists(serverExe));
+        return File.Exists(serverExe);
     }
 }
 
