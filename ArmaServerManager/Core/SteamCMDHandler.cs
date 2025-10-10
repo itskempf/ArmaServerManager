@@ -6,22 +6,49 @@ using System.Threading.Tasks;
 
 namespace ArmaServerManager.Core;
 
+/// <summary>
+/// Handles interaction with the SteamCMD command-line tool.
+/// </summary>
 public class SteamCMDHandler
 {
+    private const string Arma3ClientAppId = "107410";
+    private const string Arma3ServerAppId = "233780";
+
     private readonly string _steamCmdPath;
     private readonly LoggingService _logger;
     
+    /// <summary>
+    /// Fired when SteamCMD produces a new line of output.
+    /// </summary>
     public event Action<string>? OutputReceived;
+
+    /// <summary>
+    /// Fired when progress information is parsed from SteamCMD output.
+    /// </summary>
     public event Action<int>? ProgressChanged;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SteamCMDHandler"/> class.
+    /// </summary>
+    /// <param name="steamCmdPath">The full path to the steamcmd.exe executable.</param>
+    /// <param name="logger">The service for logging.</param>
     public SteamCMDHandler(string steamCmdPath, LoggingService logger)
     {
         _steamCmdPath = steamCmdPath;
         _logger = logger;
     }
     
+    /// <summary>
+    /// Checks if the SteamCMD executable is available at the configured path.
+    /// </summary>
+    /// <returns>True if steamcmd.exe exists, otherwise false.</returns>
     public bool IsSteamCmdAvailable() => !string.IsNullOrEmpty(_steamCmdPath) && File.Exists(_steamCmdPath);
 
+    /// <summary>
+    /// Executes the SteamCMD command to install or update the Arma 3 dedicated server.
+    /// </summary>
+    /// <param name="installPath">The directory to install the server to.</param>
+    /// <returns>A <see cref="SteamCmdResult"/> with the outcome of the operation.</returns>
     public async Task<SteamCmdResult> InstallServerAsync(string installPath)
     {
         if (string.IsNullOrEmpty(_steamCmdPath) || !File.Exists(_steamCmdPath))
@@ -34,11 +61,17 @@ public class SteamCMDHandler
         OutputReceived?.Invoke($"Installing Arma 3 server to: {installPath}");
         Directory.CreateDirectory(installPath);
         
-        var args = $"+force_install_dir \"{installPath}\" +login anonymous +app_update 233780 validate +quit";
+        var args = $"+force_install_dir \"{installPath}\" +login anonymous +app_update {Arma3ServerAppId} validate +quit";
         OutputReceived?.Invoke("Starting SteamCMD server installation...");
         return await ExecuteSteamCmdAsync(args);
     }
 
+    /// <summary>
+    /// Executes the SteamCMD command to download a workshop mod.
+    /// </summary>
+    /// <param name="modId">The Steam Workshop ID of the mod.</param>
+    /// <param name="installPath">The root directory for mod installations.</param>
+    /// <returns>A <see cref="SteamCmdResult"/> with the outcome of the operation.</returns>
     public async Task<SteamCmdResult> DownloadModAsync(string modId, string installPath)
     {
         if (string.IsNullOrEmpty(_steamCmdPath) || !File.Exists(_steamCmdPath))
@@ -49,10 +82,10 @@ public class SteamCMDHandler
         }
 
         OutputReceived?.Invoke($"Downloading Workshop mod {modId}...");
-        var modPath = Path.Combine(installPath, "steamapps\\workshop\\content\\107410", modId);
+        var modPath = Path.Combine(installPath, "steamapps\workshop\content\107410", modId);
         Directory.CreateDirectory(Path.GetDirectoryName(modPath)!);
         
-        var args = $"+login anonymous +workshop_download_item 107410 {modId} +quit";
+        var args = $"+login anonymous +workshop_download_item {Arma3ClientAppId} {modId} +quit";
         return await ExecuteSteamCmdAsync(args);
     }
 
@@ -146,6 +179,10 @@ public class SteamCMDHandler
         }
     }
     
+    /// <summary>
+    /// Verifies that the SteamCMD executable can be successfully executed.
+    /// </summary>
+    /// <returns>True if SteamCMD runs and exits cleanly, otherwise false.</returns>
     public async Task<bool> VerifySteamCmdAsync()
     {
         if (!IsSteamCmdAvailable())
@@ -163,10 +200,25 @@ public class SteamCMDHandler
     }
 }
 
+/// <summary>
+/// Represents the result of a SteamCMD operation.
+/// </summary>
 public class SteamCmdResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether the operation was successful.
+    /// </summary>
     public bool Success { get; set; }
+    /// <summary>
+    /// Gets or sets the exit code of the SteamCMD process.
+    /// </summary>
     public int ExitCode { get; set; }
+    /// <summary>
+    /// Gets or sets the standard output from the SteamCMD process.
+    /// </summary>
     public string Output { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the standard error output from the SteamCMD process.
+    /// </summary>
     public string Error { get; set; } = string.Empty;
 }
