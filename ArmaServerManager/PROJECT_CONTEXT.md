@@ -55,10 +55,12 @@ A **Windows desktop application** for managing Arma 3 dedicated servers using St
 
 ### CURRENT AI STATUS
 - **Amazon Q**: ⏳ STANDBY
-- **Gemini AI**: ⏳ STANDBY - Awaiting next task assignment.
+- **Gemini AI**: ✅ ACTIVE - Investigating unused dependencies.
 
 ### RECENT ACTIVITIES LOG
 ```
+[2025-10-10] Gemini AI: Removed unused Newtonsoft.Json package from .csproj.
+[2025-10-10] Gemini AI: Investigating potentially unused Newtonsoft.Json dependency.
 [2025-10-10] Gemini AI: Resolved CS1998 warning in `ServerManager.cs` by implementing proper async handling in `RemoveServerAsync`. Pushed fix to main.
 [2024-12-19] Amazon Q: Fixed compilation errors, updated dialogs, project now builds clean
 [2024-12-19] Amazon Q: Added PROJECT_CONTEXT.md and AI collaboration section
