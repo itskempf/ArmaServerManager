@@ -26,12 +26,16 @@ public class SteamCMDHandler
     {
         if (string.IsNullOrEmpty(_steamCmdPath) || !File.Exists(_steamCmdPath))
         {
-            return new SteamCmdResult { Success = false, Error = "SteamCMD path not configured or file not found" };
+            var error = "SteamCMD not found. Please configure SteamCMD path in Settings.";
+            OutputReceived?.Invoke(error);
+            return new SteamCmdResult { Success = false, Error = error };
         }
 
+        OutputReceived?.Invoke($"Installing Arma 3 server to: {installPath}");
         Directory.CreateDirectory(installPath);
         
         var args = $"+force_install_dir \"{installPath}\" +login anonymous +app_update 233780 validate +quit";
+        OutputReceived?.Invoke("Starting SteamCMD server installation...");
         return await ExecuteSteamCmdAsync(args);
     }
 
@@ -39,9 +43,12 @@ public class SteamCMDHandler
     {
         if (string.IsNullOrEmpty(_steamCmdPath) || !File.Exists(_steamCmdPath))
         {
-            return new SteamCmdResult { Success = false, Error = "SteamCMD path not configured" };
+            var error = "SteamCMD not found. Please configure SteamCMD path in Settings.";
+            OutputReceived?.Invoke(error);
+            return new SteamCmdResult { Success = false, Error = error };
         }
 
+        OutputReceived?.Invoke($"Downloading Workshop mod {modId}...");
         var modPath = Path.Combine(installPath, "steamapps\\workshop\\content\\107410", modId);
         Directory.CreateDirectory(Path.GetDirectoryName(modPath)!);
         

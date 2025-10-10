@@ -18,7 +18,7 @@ public class ModManager
 
     public ModManager(string modsPath, SteamCMDHandler steamCmdHandler, LoggingService logger)
     {
-        _modsPath = modsPath;
+        _modsPath = string.IsNullOrEmpty(modsPath) ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Mods") : modsPath;
         _steamCmdHandler = steamCmdHandler;
         _logger = logger;
         _modsConfigPath = Path.Combine(_modsPath, "mods.json");
@@ -252,6 +252,43 @@ public class ModManager
     {
         _logger.LogInformation("Updating mod: {WorkshopId}", workshopId);
         return await InstallModAsync(workshopId).ConfigureAwait(false);
+    }
+    
+    public void CopyModKeysToServer(string workshopId, string serverKeysPath)
+    {
+        try
+        {
+            var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", "107410", workshopId);
+            var modKeysPath = Path.Combine(modPath, "Keys");
+            
+            if (!Directory.Exists(modKeysPath))
+            {
+                _logger.LogWarning("No keys folder found for mod: {WorkshopId}", workshopId);
+                return;
+            }
+            
+            Directory.CreateDirectory(serverKeysPath);
+            
+            foreach (var keyFile in Directory.GetFiles(modKeysPath, "*.bikey"))
+            {
+                var fileName = Path.GetFileName(keyFile);
+                var destPath = Path.Combine(serverKeysPath, fileName);
+                File.Copy(keyFile, destPath, true);
+                _logger.LogInformation("Copied key: {KeyFile} to server", fileName);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to copy keys for mod: {WorkshopId}", workshopId);
+        }
+    }
+    
+    public void CopyAllEnabledModKeys(string serverKeysPath)
+    {
+        foreach (var mod in Mods.Where(m => m.IsEnabled && !m.IsLocal))
+        {
+            CopyModKeysToServer(mod.WorkshopId, serverKeysPath);
+        }
     }
 }
 

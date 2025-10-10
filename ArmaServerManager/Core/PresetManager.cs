@@ -16,7 +16,7 @@ public class PresetManager
 
     public PresetManager(string presetsPath, ModManager modManager, LoggingService logger)
     {
-        _presetsPath = presetsPath;
+        _presetsPath = string.IsNullOrEmpty(presetsPath) ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Presets") : presetsPath;
         _modManager = modManager;
         _logger = logger;
         Directory.CreateDirectory(_presetsPath);
@@ -92,37 +92,63 @@ public class PresetManager
             var html = await File.ReadAllTextAsync(htmlFilePath).ConfigureAwait(false);
             var preset = new ModPreset();
             
-            // Extract preset name
-            var nameStart = html.IndexOf("arma:PresetName\" content=\"");
-            if (nameStart >= 0)
+            // Extract preset name from meta tag
+            var nameMatch = System.Text.RegularExpressions.Regex.Match(html, @"arma:PresetName""\s+content=""([^""]+)""");
+            if (nameMatch.Success)
             {
-                nameStart += 25;
-                var nameEnd = html.IndexOf("\"", nameStart);
-                if (nameEnd > nameStart)
-                    preset.Name = html.Substring(nameStart, nameEnd - nameStart);
+                preset.Name = nameMatch.Groups[1].Value;
+            }
+            else
+            {
+                preset.Name = Path.GetFileNameWithoutExtension(htmlFilePath);
             }
             
-            // Extract mod IDs
+            // Extract mod IDs from Steam Workshop links
             var modIds = new List<string>();
-            var searchPos = 0;
-            while ((searchPos = html.IndexOf("filedetails/?id=", searchPos)) >= 0)
+            var matches = System.Text.RegularExpressions.Regex.Matches(html, @"steamcommunity\.com/sharedfiles/filedetails/\?id=(\d+)");
+            
+            foreach (System.Text.RegularExpressions.Match match in matches)
             {
-                searchPos += 16;
-                var endPos = html.IndexOf("\"", searchPos);
-                if (endPos > searchPos)
+                var modId = match.Groups[1].Value;
+                if (!modIds.Contains(modId))
                 {
-                    var modId = html.Substring(searchPos, endPos - searchPos);
                     modIds.Add(modId);
                 }
             }
             
             preset.ModIds = modIds;
+            preset.Description = $"Imported from {Path.GetFileName(htmlFilePath)} - {modIds.Count} mods";
+            
+            _logger.LogInformation("Imported preset '{0}' with {1} mods from HTML", preset.Name, modIds.Count);
             return preset;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to import preset from HTML: {HtmlFile}", htmlFilePath);
             return null;
+        }
+    }
+    
+    public async Task<bool> InstallPresetModsAsync(ModPreset preset)
+    {
+        try
+        {
+            _logger.LogInformation("Installing mods for preset: {PresetName}", preset.Name);
+            
+            foreach (var modId in preset.ModIds)
+            {
+                if (!_modManager.Mods.Any(m => m.WorkshopId == modId))
+                {
+                    await _modManager.InstallModAsync(modId).ConfigureAwait(false);
+                }
+            }
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to install preset mods: {PresetName}", preset.Name);
+            return false;
         }
     }
     

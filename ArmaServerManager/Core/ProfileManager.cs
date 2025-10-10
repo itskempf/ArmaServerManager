@@ -112,21 +112,7 @@ public class ProfileManager
                 }
             }
             
-            if (Profiles.Count == 0)
-            {
-                var defaultProfile = new ServerProfile
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Name = "Default",
-                    Server = _configManager.GenerateDefaultConfig("Default Server", 
-                        Path.Combine(_settingsService.Settings.Directories.Servers, "Default")),
-                    Description = "Default server profile",
-                    CreatedDate = DateTime.Now,
-                    LastModified = DateTime.Now
-                };
-                
-                Profiles.Add(defaultProfile);
-            }
+            // No default profile - user must create servers manually
             
             CurrentProfile = Profiles.FirstOrDefault();
             _logger.LogInformation("Loaded {Count} profiles", Profiles.Count);

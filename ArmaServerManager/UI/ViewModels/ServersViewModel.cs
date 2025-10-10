@@ -31,7 +31,7 @@ public partial class ServersViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void AddNewServer()
+    private async Task AddNewServerAsync()
     {
         var newServer = new ArmaServer
         {
@@ -42,7 +42,7 @@ public partial class ServersViewModel : ViewModelBase
             MaxPlayers = 64
         };
         
-        _serverManager.AddServer(newServer);
+        await _serverManager.AddServerAsync(newServer);
         SelectedServer = newServer;
     }
 
@@ -73,11 +73,11 @@ public partial class ServersViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void DeleteServer(ArmaServer server)
+    private async Task DeleteServerAsync(ArmaServer server)
     {
         if (server == null) return;
         
-        _serverManager.RemoveServer(server.Name);
+        await _serverManager.RemoveServerAsync(server.Name);
         
         if (SelectedServer == server)
             SelectedServer = null;

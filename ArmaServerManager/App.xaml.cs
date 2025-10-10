@@ -32,7 +32,12 @@ public partial class App : Application
             var logger = provider.GetRequiredService<LoggingService>();
             return new SteamCMDHandler(settings.Settings.SteamCMD.Path, logger);
         });
-        services.AddSingleton<ServerManager>();
+        services.AddSingleton<ServerManager>(provider =>
+        {
+            var logger = provider.GetRequiredService<LoggingService>();
+            var settings = provider.GetRequiredService<SettingsService>();
+            return new ServerManager(logger, settings);
+        });
         services.AddSingleton<ConfigManager>(provider =>
         {
             var settings = provider.GetRequiredService<SettingsService>();
@@ -73,10 +78,24 @@ public partial class App : Application
             var dataDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
             return new SteamAuthManager(dataDir);
         });
+        services.AddSingleton<SetupService>();
         services.AddSingleton<LoggingService>();
         services.AddSingleton<NotificationService>();
-        services.AddSingleton<BackupService>();
-        services.AddSingleton<SchedulerService>();
+        services.AddSingleton<BackupService>(provider =>
+        {
+            var settings = provider.GetRequiredService<SettingsService>();
+            var logger = provider.GetRequiredService<LoggingService>();
+            var serverManager = provider.GetRequiredService<ServerManager>();
+            return new BackupService(settings, logger, serverManager);
+        });
+        services.AddSingleton<SchedulerService>(provider =>
+        {
+            var serverManager = provider.GetRequiredService<ServerManager>();
+            var updateService = provider.GetRequiredService<UpdateService>();
+            var backupService = provider.GetRequiredService<BackupService>();
+            var logger = provider.GetRequiredService<LoggingService>();
+            return new SchedulerService(serverManager, updateService, backupService, logger);
+        });
         services.AddSingleton<PresetManager>(provider =>
         {
             var settings = provider.GetRequiredService<SettingsService>();
@@ -101,8 +120,27 @@ public partial class App : Application
         // ViewModels
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<ServersViewModel>();
-        services.AddTransient<ModsViewModel>();
-        services.AddTransient<SettingsViewModel>();
+        services.AddTransient<ModsViewModel>(provider =>
+        {
+            var modManager = provider.GetRequiredService<ModManager>();
+            var presetManager = provider.GetRequiredService<PresetManager>();
+            var notificationService = provider.GetRequiredService<NotificationService>();
+            return new ModsViewModel(modManager, presetManager, notificationService);
+        });
+        services.AddTransient<PresetsViewModel>(provider =>
+        {
+            var presetManager = provider.GetRequiredService<PresetManager>();
+            var modManager = provider.GetRequiredService<ModManager>();
+            var notificationService = provider.GetRequiredService<NotificationService>();
+            return new PresetsViewModel(presetManager, modManager, notificationService);
+        });
+        services.AddTransient<SettingsViewModel>(provider =>
+        {
+            var settingsService = provider.GetRequiredService<SettingsService>();
+            var setupService = provider.GetRequiredService<SetupService>();
+            var notificationService = provider.GetRequiredService<NotificationService>();
+            return new SettingsViewModel(settingsService, setupService, notificationService);
+        });
         
         return services.BuildServiceProvider();
     }

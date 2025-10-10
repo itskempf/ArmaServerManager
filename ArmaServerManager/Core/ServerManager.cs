@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -25,13 +26,24 @@ public class ServerManager
         LoadServers();
     }
 
+    public event Action<string>? StatusChanged;
+    
+    private void NotifyStatus(string status)
+    {
+        StatusChanged?.Invoke(status);
+        _logger.LogInformation(status);
+    }
+
     public async Task<bool> StartServerAsync(ArmaServer server)
     {
         try
         {
+            NotifyStatus($"Starting server: {server.Name}");
+            
             var serverExe = Path.Combine(server.InstallPath, "arma3server_x64.exe");
             if (!File.Exists(serverExe))
             {
+                NotifyStatus($"Server files not found for {server.Name}. Please install server first.");
                 _logger.LogError("Server executable not found: {ServerExe}", serverExe);
                 return false;
             }
@@ -53,6 +65,7 @@ public class ServerManager
                 _serverProcessIds[server.Name] = process.Id;
                 server.IsRunning = true;
                 server.ProcessId = process.Id;
+                NotifyStatus($"Server {server.Name} started successfully (PID: {process.Id})");
                 _logger.LogInformation("Server started: {ServerName} (PID: {ProcessId})", server.Name, process.Id);
                 
                 _ = Task.Run(async () =>
@@ -216,19 +229,39 @@ public class ServerManager
     
     private void LoadServers()
     {
-        // Load servers from configuration or create default
-        if (Servers.Count == 0)
+        NotifyStatus("Loading server configurations...");
+        
+        try
         {
-            var defaultServer = new ArmaServer
+            var serversDir = Path.Combine(_settingsService.Settings.Directories.Configs, "Servers");
+            if (Directory.Exists(serversDir))
             {
-                Name = "Default Server",
-                InstallPath = Path.Combine(_settingsService.Settings.Directories.Servers, "default"),
-                ConfigPath = "server.cfg",
-                Port = 2302,
-                MaxPlayers = 64
-            };
+                foreach (var file in Directory.GetFiles(serversDir, "*.json"))
+                {
+                    try
+                    {
+                        var json = File.ReadAllText(file);
+                        var server = JsonSerializer.Deserialize<ArmaServer>(json);
+                        if (server != null)
+                        {
+                            Servers.Add(server);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to load server from: {File}", file);
+                    }
+                }
+            }
             
-            Servers.Add(defaultServer);
+            NotifyStatus(Servers.Count == 0 ? 
+                "No servers configured. Please add a server and install Arma 3 server files." : 
+                $"Loaded {Servers.Count} server(s)");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load servers");
+            NotifyStatus("Failed to load server configurations");
         }
     }
     
@@ -240,13 +273,31 @@ public class ServerManager
         }
     }
     
-    public void AddServer(ArmaServer server)
+    public async Task AddServerAsync(ArmaServer server)
     {
         Servers.Add(server);
+        await SaveServerAsync(server).ConfigureAwait(false);
         _logger.LogInformation("Server added: {ServerName}", server.Name);
     }
     
-    public void RemoveServer(string serverName)
+    private async Task SaveServerAsync(ArmaServer server)
+    {
+        try
+        {
+            var serversDir = Path.Combine(_settingsService.Settings.Directories.Configs, "Servers");
+            Directory.CreateDirectory(serversDir);
+            
+            var serverFile = Path.Combine(serversDir, $"{server.Name}.json");
+            var json = JsonSerializer.Serialize(server, new JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(serverFile, json).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save server: {ServerName}", server.Name);
+        }
+    }
+    
+    public async Task RemoveServerAsync(string serverName)
     {
         var server = Servers.FirstOrDefault(s => s.Name == serverName);
         if (server != null)
@@ -255,6 +306,20 @@ public class ServerManager
                 StopServer(serverName);
                 
             Servers.Remove(server);
+            
+            // Delete server file
+            try
+            {
+                var serversDir = Path.Combine(_settingsService.Settings.Directories.Configs, "Servers");
+                var serverFile = Path.Combine(serversDir, $"{serverName}.json");
+                if (File.Exists(serverFile))
+                    File.Delete(serverFile);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete server file: {ServerName}", serverName);
+            }
+            
             _logger.LogInformation("Server removed: {ServerName}", serverName);
         }
     }
@@ -273,12 +338,13 @@ public class ServerManager
             if (_serverProcessIds.TryGetValue(serverName, out var processId))
             {
                 var process = Process.GetProcessById(processId);
+                var cpuUsage = GetProcessCpuUsage(process);
                 return new ServerStatus
                 {
                     IsRunning = true,
                     Status = "Running",
                     ProcessId = processId,
-                    CpuUsage = 0,
+                    CpuUsage = cpuUsage,
                     MemoryUsage = process.WorkingSet64,
                     Uptime = DateTime.Now - process.StartTime
                 };
@@ -291,6 +357,21 @@ public class ServerManager
         }
         
         return new ServerStatus { IsRunning = false, Status = "Unknown" };
+    }
+    
+    private float GetProcessCpuUsage(Process process)
+    {
+        try
+        {
+            using var counter = new PerformanceCounter("Process", "% Processor Time", process.ProcessName);
+            counter.NextValue(); // First call returns 0
+            System.Threading.Thread.Sleep(100);
+            return counter.NextValue();
+        }
+        catch
+        {
+            return 0;
+        }
     }
     
     public async Task<bool> ValidateServerInstallation(string installPath)

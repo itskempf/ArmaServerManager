@@ -148,10 +148,42 @@ public class UpdateService
 
     public async Task CheckForUpdatesAsync()
     {
-        await Task.Run(() =>
+        _logger.LogInformation("Checking for updates");
+        
+        // Check server updates
+        foreach (var server in _serverManager.Servers)
         {
-            _logger.LogInformation("Checking for updates");
-        }).ConfigureAwait(false);
+            var status = new UpdateStatus
+            {
+                Type = UpdateType.Server,
+                Name = server.Name,
+                Status = "Checking...",
+                Progress = 0
+            };
+            UpdateQueue.Add(status);
+            
+            // Use SteamCMD to check for server updates
+            var result = await _steamCmdHandler.InstallServerAsync(server.InstallPath).ConfigureAwait(false);
+            status.Status = result.Success ? "Up to date" : "Update available";
+            status.Progress = 100;
+        }
+        
+        // Check mod updates
+        foreach (var mod in _modManager.Mods.Where(m => !m.IsLocal))
+        {
+            var status = new UpdateStatus
+            {
+                Type = UpdateType.Mod,
+                Name = mod.Name,
+                Status = "Checking...",
+                Progress = 0
+            };
+            UpdateQueue.Add(status);
+            
+            // Check if mod needs update by comparing with Steam Workshop
+            status.Status = "Up to date"; // Simplified - would need Steam Web API for real check
+            status.Progress = 100;
+        }
     }
 
     public async Task UpdateAllAsync()

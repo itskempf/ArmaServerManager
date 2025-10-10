@@ -12,7 +12,7 @@ public class ConfigManager
 
     public ConfigManager(string configsPath, LoggingService logger)
     {
-        _configsPath = configsPath;
+        _configsPath = string.IsNullOrEmpty(configsPath) ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Configs") : configsPath;
         _logger = logger;
         Directory.CreateDirectory(_configsPath);
     }
@@ -129,5 +129,5 @@ class Missions
         }
     }
 
-    public void SaveConfig(ArmaServer server) => Task.Run(async () => await SaveConfigAsync(server).ConfigureAwait(false));
+    public void SaveConfig(ArmaServer server) => _ = Task.Run(async () => await SaveConfigAsync(server).ConfigureAwait(false));
 }

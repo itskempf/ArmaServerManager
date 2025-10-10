@@ -10,6 +10,8 @@ namespace ArmaServerManager.UI.ViewModels;
 public partial class ModsViewModel : ViewModelBase
 {
     private readonly ModManager _modManager;
+    private readonly PresetManager _presetManager;
+    private readonly NotificationService _notificationService;
 
     public ObservableCollection<ArmaMod> Mods => _modManager.Mods;
 
@@ -22,9 +24,11 @@ public partial class ModsViewModel : ViewModelBase
     [ObservableProperty]
     private string installProgress = string.Empty;
 
-    public ModsViewModel(ModManager modManager)
+    public ModsViewModel(ModManager modManager, PresetManager presetManager, NotificationService notificationService)
     {
         _modManager = modManager;
+        _presetManager = presetManager;
+        _notificationService = notificationService;
         _modManager.LoadInstalledMods();
     }
 
@@ -78,16 +82,64 @@ public partial class ModsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ImportPreset()
+    private async Task ImportPresetAsync()
     {
-        // Open file picker for HTML preset files
-        // Parse and install mods from preset
+        try
+        {
+            using var dialog = new System.Windows.Forms.OpenFileDialog
+            {
+                Filter = "HTML Preset Files|*.html|All Files|*.*",
+                Title = "Import Arma 3 Preset"
+            };
+            
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                var preset = await _presetManager.ImportPresetFromHtmlAsync(dialog.FileName);
+                if (preset != null)
+                {
+                    await _presetManager.SavePresetAsync(preset);
+                    await _presetManager.InstallPresetModsAsync(preset);
+                    _notificationService.ShowSuccess("Preset Imported", $"Imported {preset.ModIds.Count} mods from {preset.Name}");
+                }
+                else
+                {
+                    _notificationService.ShowError("Import Failed", "Failed to parse preset file");
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            _notificationService.ShowError("Import Error", $"Failed to import preset: {ex.Message}");
+        }
     }
 
     [RelayCommand]
-    private void ExportPreset()
+    private async Task ExportPresetAsync()
     {
-        var enabledMods = Mods.Where(m => m.IsEnabled).Select(m => m.WorkshopId).ToList();
-        // Export logic here
+        try
+        {
+            var enabledMods = Mods.Where(m => m.IsEnabled).Select(m => m.WorkshopId).ToList();
+            if (!enabledMods.Any())
+            {
+                _notificationService.ShowWarning("No Mods", "No enabled mods to export");
+                return;
+            }
+            
+            var preset = new ModPreset
+            {
+                Name = $"Export_{System.DateTime.Now:yyyyMMdd_HHmmss}",
+                Description = $"Exported preset with {enabledMods.Count} mods",
+                ModIds = enabledMods
+            };
+            
+            await _presetManager.SavePresetAsync(preset);
+            var htmlPath = await _presetManager.ExportPresetToHtmlAsync(preset);
+            
+            _notificationService.ShowSuccess("Preset Exported", $"Exported to {htmlPath}");
+        }
+        catch (System.Exception ex)
+        {
+            _notificationService.ShowError("Export Error", $"Failed to export preset: {ex.Message}");
+        }
     }
 }
