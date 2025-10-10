@@ -7,15 +7,28 @@ using System.Threading.Tasks;
 
 namespace ArmaServerManager.Core;
 
+/// <summary>
+/// Manages Arma 3 mods, including installation, discovery, and configuration.
+/// </summary>
 public class ModManager
 {
+    private const string Arma3AppId = "107410";
     private readonly string _modsPath;
     private readonly SteamCMDHandler _steamCmdHandler;
     private readonly LoggingService _logger;
     private readonly string _modsConfigPath;
     
+    /// <summary>
+    /// Collection of currently loaded mods.
+    /// </summary>
     public ObservableCollection<ArmaMod> Mods { get; } = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ModManager"/> class.
+    /// </summary>
+    /// <param name="modsPath">The root directory for mods.</param>
+    /// <param name="steamCmdHandler">Handler for SteamCMD operations.</param>
+    /// <param name="logger">Service for logging.</param>
     public ModManager(string modsPath, SteamCMDHandler steamCmdHandler, LoggingService logger)
     {
         _modsPath = string.IsNullOrEmpty(modsPath) ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Mods") : modsPath;
@@ -27,6 +40,11 @@ public class ModManager
         LoadInstalledMods();
     }
 
+    /// <summary>
+    /// Installs a mod from the Steam Workshop.
+    /// </summary>
+    /// <param name="workshopId">The Steam Workshop ID of the mod.</param>
+    /// <returns>True if installation is successful, otherwise false.</returns>
     public async Task<bool> InstallModAsync(string workshopId)
     {
         try
@@ -40,7 +58,7 @@ public class ModManager
                 return false;
             }
 
-            var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", "107410", workshopId);
+            var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", Arma3AppId, workshopId);
             var modName = GetModName(modPath) ?? $"Workshop Mod {workshopId}";
             
             var mod = new ArmaMod
@@ -65,6 +83,12 @@ public class ModManager
         }
     }
 
+    /// <summary>
+    /// Adds a local mod from a specified path.
+    /// </summary>
+    /// <param name="modPath">Path to the local mod directory.</param>
+    /// <param name="modName">Name of the mod.</param>
+    /// <returns>True if successful, otherwise false.</returns>
     public async Task<bool> AddLocalModAsync(string modPath, string modName)
     {
         try
@@ -77,7 +101,7 @@ public class ModManager
 
             var mod = new ArmaMod
             {
-                WorkshopId = $"local_{Guid.NewGuid():N}".Substring(0, 14),
+                WorkshopId = $"local_{modName}",
                 Name = modName,
                 Path = modPath,
                 IsEnabled = true,
@@ -97,6 +121,10 @@ public class ModManager
         }
     }
 
+    /// <summary>
+    /// Removes a mod from the manager.
+    /// </summary>
+    /// <param name="workshopId">Workshop ID of the mod to remove.</param>
     public async Task RemoveModAsync(string workshopId)
     {
         var mod = Mods.FirstOrDefault(m => m.WorkshopId == workshopId);
@@ -108,6 +136,9 @@ public class ModManager
         }
     }
 
+    /// <summary>
+    /// Loads all installed mods from the configuration file or discovers them from the directory.
+    /// </summary>
     public void LoadInstalledMods()
     {
         try
@@ -137,8 +168,8 @@ public class ModManager
     
     private void LoadWorkshopMods()
     {
-        var workshopPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", "107410");
-        if (!Directory.Exists(workshopPath)) return;
+        var workshopPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", Arma3AppId);
+        if (!Directory.Exists(workshopPath)) return; 
         
         foreach (var modDir in Directory.GetDirectories(workshopPath))
         {
@@ -159,7 +190,7 @@ public class ModManager
     private void LoadLocalMods()
     {
         var localModsPath = Path.Combine(_modsPath, "Local");
-        if (!Directory.Exists(localModsPath)) return;
+        if (!Directory.Exists(localModsPath)) return; 
         
         foreach (var modDir in Directory.GetDirectories(localModsPath))
         {
@@ -210,15 +241,25 @@ public class ModManager
         }
     }
     
+    /// <summary>
+    /// Verifies if a mod is properly installed by checking its directory and for .pbo files.
+    /// </summary>
+    /// <param name="workshopId">Workshop ID of the mod to verify.</param>
+    /// <returns>True if the mod appears to be installed correctly.</returns>
     public bool VerifyModInstallation(string workshopId)
     {
-        var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", "107410", workshopId);
+        var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", Arma3AppId, workshopId);
         return Directory.Exists(modPath) && Directory.GetFiles(modPath, "*.pbo", SearchOption.AllDirectories).Length > 0;
     }
     
+    /// <summary>
+    /// Calculates the total size of a mod on disk.
+    /// </summary>
+    /// <param name="workshopId">Workshop ID of the mod.</param>
+    /// <returns>The total size of the mod in bytes.</returns>
     public long GetModSize(string workshopId)
     {
-        var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", "107410", workshopId);
+        var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", Arma3AppId, workshopId);
         if (!Directory.Exists(modPath))
             return 0;
         
@@ -234,9 +275,14 @@ public class ModManager
         }
     }
     
+    /// <summary>
+    /// Gets a string listing all .bikey files for a given mod.
+    /// </summary>
+    /// <param name="workshopId">Workshop ID of the mod.</param>
+    /// <returns>A comma-separated string of key file names, or a not found message.</returns>
     public string GetModKeys(string workshopId)
     {
-        var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", "107410", workshopId);
+        var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", Arma3AppId, workshopId);
         var keysPath = Path.Combine(modPath, "Keys");
         
         if (Directory.Exists(keysPath))
@@ -248,17 +294,27 @@ public class ModManager
         return "No keys found";
     }
     
+    /// <summary>
+    /// Updates a mod by re-downloading it.
+    /// </summary>
+    /// <param name="workshopId">Workshop ID of the mod to update.</param>
+    /// <returns>True if the update is successful, otherwise false.</returns>
     public async Task<bool> UpdateModAsync(string workshopId)
     {
         _logger.LogInformation("Updating mod: {WorkshopId}", workshopId);
         return await InstallModAsync(workshopId).ConfigureAwait(false);
     }
     
+    /// <summary>
+    /// Copies all .bikey files from a mod's 'Keys' folder to a server's 'keys' folder.
+    /// </summary>
+    /// <param name="workshopId">Workshop ID of the mod.</param>
+    /// <param name="serverKeysPath">Path to the server's 'keys' directory.</param>
     public void CopyModKeysToServer(string workshopId, string serverKeysPath)
     {
         try
         {
-            var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", "107410", workshopId);
+            var modPath = Path.Combine(_modsPath, "steamapps", "workshop", "content", Arma3AppId, workshopId);
             var modKeysPath = Path.Combine(modPath, "Keys");
             
             if (!Directory.Exists(modKeysPath))
@@ -283,6 +339,10 @@ public class ModManager
         }
     }
     
+    /// <summary>
+    /// Copies keys for all enabled mods to the server's key directory.
+    /// </summary>
+    /// <param name="serverKeysPath">Path to the server's 'keys' directory.</param>
     public void CopyAllEnabledModKeys(string serverKeysPath)
     {
         foreach (var mod in Mods.Where(m => m.IsEnabled && !m.IsLocal))
@@ -292,13 +352,34 @@ public class ModManager
     }
 }
 
+/// <summary>
+/// Represents an Arma 3 mod.
+/// </summary>
 public class ArmaMod
 {
+    /// <summary>
+    /// Gets or sets the Steam Workshop ID. For local mods, this is a generated ID.
+    /// </summary>
     public string WorkshopId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the name of the mod.
+    /// </summary>
     public string Name { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the file path to the mod directory.
+    /// </summary>
     public string Path { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets a value indicating whether the mod is currently enabled.
+    /// </summary>
     public bool IsEnabled { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether the mod is a local mod (not from Steam Workshop).
+    /// </summary>
     public bool IsLocal { get; set; }
     
+    /// <summary>
+    /// Gets a value indicating whether the local mod indicator should be visible in the UI.
+    /// </summary>
     public string IsLocalVisible => IsLocal ? "Visible" : "Collapsed";
 }
