@@ -304,22 +304,25 @@ public class ServerManager
         {
             if (server.IsRunning)
                 StopServer(serverName);
-                
+
             Servers.Remove(server);
-            
+
             // Delete server file
-            try
+            await Task.Run(() =>
             {
-                var serversDir = Path.Combine(_settingsService.Settings.Directories.Configs, "Servers");
-                var serverFile = Path.Combine(serversDir, $"{serverName}.json");
-                if (File.Exists(serverFile))
-                    File.Delete(serverFile);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to delete server file: {ServerName}", serverName);
-            }
-            
+                try
+                {
+                    var serversDir = Path.Combine(_settingsService.Settings.Directories.Configs, "Servers");
+                    var serverFile = Path.Combine(serversDir, $"{serverName}.json");
+                    if (File.Exists(serverFile))
+                        File.Delete(serverFile);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to delete server file: {ServerName}", serverName);
+                }
+            });
+
             _logger.LogInformation("Server removed: {ServerName}", serverName);
         }
     }
