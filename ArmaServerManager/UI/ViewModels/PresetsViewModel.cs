@@ -37,12 +37,12 @@ public partial class PresetsViewModel : ViewModelBase
         LoadPresets();
     }
 
-    private void LoadPresets()
+    private async void LoadPresets()
     {
         try
         {
             AvailablePresets.Clear();
-            var presets = _presetManager.GetPresets();
+            var presets = await _presetManager.GetPresetsAsync();
             foreach (var preset in presets)
             {
                 AvailablePresets.Add(preset);
@@ -155,13 +155,14 @@ public partial class PresetsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void DeletePreset(string presetName)
+
+    private async Task DeletePresetAsync(string presetName)
     {
         if (string.IsNullOrEmpty(presetName)) return;
 
         try
         {
-            _presetManager.DeletePreset(presetName);
+            await _presetManager.DeletePresetAsync(presetName);
             LoadPresets();
             if (SelectedPresetName == presetName)
             {

@@ -3,19 +3,20 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace ArmaServerManager.Core;
 
 /// <summary>
 /// Handles interaction with the SteamCMD command-line tool.
 /// </summary>
-public class SteamCMDHandler
+public class SteamCMDHandler : ISteamCMDHandler
 {
     private const string Arma3ClientAppId = "107410";
     private const string Arma3ServerAppId = "233780";
 
     private readonly string _steamCmdPath;
-    private readonly LoggingService _logger;
+    private readonly ILogger _logger;
     
     /// <summary>
     /// Fired when SteamCMD produces a new line of output.
@@ -32,7 +33,7 @@ public class SteamCMDHandler
     /// </summary>
     /// <param name="steamCmdPath">The full path to the steamcmd.exe executable.</param>
     /// <param name="logger">The service for logging.</param>
-    public SteamCMDHandler(string steamCmdPath, LoggingService logger)
+    public SteamCMDHandler(string steamCmdPath, ILogger logger)
     {
         _steamCmdPath = steamCmdPath;
         _logger = logger;
@@ -82,7 +83,7 @@ public class SteamCMDHandler
         }
 
         OutputReceived?.Invoke($"Downloading Workshop mod {modId}...");
-        var modPath = Path.Combine(installPath, "steamapps\workshop\content\107410", modId);
+        var modPath = Path.Combine(installPath, @"steamapps\workshop\content\107410", modId);
         Directory.CreateDirectory(Path.GetDirectoryName(modPath)!);
         
         var args = $"+login anonymous +workshop_download_item {Arma3ClientAppId} {modId} +quit";

@@ -34,7 +34,7 @@ public class ResourceMonitor
     private readonly Timer _monitorTimer;
     private readonly PerformanceCounter _cpuCounter;
     private readonly PerformanceCounter _ramCounter;
-    private readonly LoggingService _logger;
+    private readonly ILogger _logger;
     
     public float CpuAlertThreshold { get; set; } = 80.0f;
     public long MemoryAlertThreshold { get; set; } = 1024 * 1024 * 1024; // 1GB
@@ -42,7 +42,7 @@ public class ResourceMonitor
     public event Action<ResourceAlert>? AlertTriggered;
     public event Action<ServerResourceData>? DataUpdated;
 
-    public ResourceMonitor(LoggingService logger)
+    public ResourceMonitor(ILogger logger)
     {
         _logger = logger;
         _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");

@@ -25,45 +25,48 @@ public partial class App : Application
         var services = new ServiceCollection();
         
         // Core Services
-        services.AddSingleton<SettingsService>();
+        // Core Services
+        services.AddSingleton<SettingsService>(provider => new SettingsService());
         services.AddSingleton<SteamCMDHandler>(provider =>
         {
             var settings = provider.GetRequiredService<SettingsService>();
-            var logger = provider.GetRequiredService<LoggingService>();
+            var logger = provider.GetRequiredService<ILogger>();
             return new SteamCMDHandler(settings.Settings.SteamCMD.Path, logger);
         });
+        services.AddSingleton<ISteamCMDHandler>(provider => provider.GetRequiredService<SteamCMDHandler>());
+
         services.AddSingleton<ServerManager>(provider =>
         {
-            var logger = provider.GetRequiredService<LoggingService>();
+            var logger = provider.GetRequiredService<ILogger>();
             var settings = provider.GetRequiredService<SettingsService>();
             return new ServerManager(logger, settings);
         });
         services.AddSingleton<ConfigManager>(provider =>
         {
             var settings = provider.GetRequiredService<SettingsService>();
-            var logger = provider.GetRequiredService<LoggingService>();
+            var logger = provider.GetRequiredService<ILogger>();
             return new ConfigManager(settings.Settings.Directories.Configs, logger);
         });
         services.AddSingleton<ModManager>(provider =>
         {
             var settings = provider.GetRequiredService<SettingsService>();
-            var steamCmd = provider.GetRequiredService<SteamCMDHandler>();
-            var logger = provider.GetRequiredService<LoggingService>();
+            var steamCmd = provider.GetRequiredService<ISteamCMDHandler>();
+            var logger = provider.GetRequiredService<ILogger>();
             return new ModManager(settings.Settings.Directories.Mods, steamCmd, logger);
         });
         services.AddSingleton<ResourceMonitor>(provider =>
         {
-            var logger = provider.GetRequiredService<LoggingService>();
+            var logger = provider.GetRequiredService<ILogger>();
             return new ResourceMonitor(logger);
         });
         services.AddSingleton<ThemeService>();
         services.AddSingleton<UpdateService>(provider =>
         {
-            var steamCmd = provider.GetRequiredService<SteamCMDHandler>();
+            var steamCmd = provider.GetRequiredService<ISteamCMDHandler>();
             var modManager = provider.GetRequiredService<ModManager>();
             var serverManager = provider.GetRequiredService<ServerManager>();
             var settings = provider.GetRequiredService<SettingsService>();
-            var logger = provider.GetRequiredService<LoggingService>();
+            var logger = provider.GetRequiredService<ILogger>();
             return new UpdateService(steamCmd, modManager, serverManager, settings, logger);
         });
         services.AddSingleton<ProfileManager>(provider =>
@@ -80,6 +83,7 @@ public partial class App : Application
         });
         services.AddSingleton<SetupService>();
         services.AddSingleton<LoggingService>();
+        services.AddSingleton<ILogger>(provider => provider.GetRequiredService<LoggingService>());
         services.AddSingleton<NotificationService>();
         services.AddSingleton<BackupService>(provider =>
         {

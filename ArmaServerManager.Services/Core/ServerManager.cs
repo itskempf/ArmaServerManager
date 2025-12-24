@@ -13,13 +13,13 @@ namespace ArmaServerManager.Core;
 
 public class ServerManager
 {
-    private readonly LoggingService _logger;
+    private readonly ILogger _logger;
     private readonly SettingsService _settingsService;
     private readonly ConcurrentDictionary<string, int> _serverProcessIds = new();
     
     public ObservableCollection<ArmaServer> Servers { get; } = new();
     
-    public ServerManager(LoggingService logger, SettingsService settingsService)
+    public ServerManager(ILogger logger, SettingsService settingsService)
     {
         _logger = logger;
         _settingsService = settingsService;

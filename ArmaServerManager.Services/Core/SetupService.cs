@@ -2,19 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace ArmaServerManager.Core;
 
 public class SetupService
 {
     private readonly SettingsService _settingsService;
-    private readonly SteamCMDHandler _steamCmdHandler;
-    private readonly LoggingService _logger;
+    private readonly ISteamCMDHandler _steamCmdHandler;
+    private readonly ILogger _logger;
     
     public event Action<string>? StatusChanged;
     public event Action<bool>? SetupCompleted;
 
-    public SetupService(SettingsService settingsService, SteamCMDHandler steamCmdHandler, LoggingService logger)
+    public SetupService(SettingsService settingsService, ISteamCMDHandler steamCmdHandler, ILogger logger)
     {
         _settingsService = settingsService;
         _steamCmdHandler = steamCmdHandler;

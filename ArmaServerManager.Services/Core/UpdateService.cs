@@ -2,23 +2,24 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ArmaServerManager.Core;
 
 public class UpdateService
 {
-    private readonly SteamCMDHandler _steamCmdHandler;
+    private readonly ISteamCMDHandler _steamCmdHandler;
     private readonly ModManager _modManager;
     private readonly ServerManager _serverManager;
     private readonly SettingsService _settingsService;
-    private readonly LoggingService _logger;
+    private readonly ILogger _logger;
     
     public ObservableCollection<UpdateStatus> UpdateQueue { get; } = new();
     public bool IsUpdating { get; private set; }
     public bool HasPendingUpdates => UpdateQueue.Count > 0;
 
-    public UpdateService(SteamCMDHandler steamCmdHandler, ModManager modManager, ServerManager serverManager, SettingsService settingsService, LoggingService logger)
+    public UpdateService(ISteamCMDHandler steamCmdHandler, ModManager modManager, ServerManager serverManager, SettingsService settingsService, ILogger logger)
     {
         _steamCmdHandler = steamCmdHandler;
         _modManager = modManager;

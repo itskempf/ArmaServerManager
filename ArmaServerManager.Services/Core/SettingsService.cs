@@ -10,9 +10,9 @@ public class SettingsService
     private readonly string _settingsFilePath;
     public AppSettings Settings { get; private set; } = new();
 
-    public SettingsService()
+    public SettingsService(string? dataDirectory = null)
     {
-        var dataDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+        var dataDir = dataDirectory ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
         Directory.CreateDirectory(dataDir);
         _settingsFilePath = Path.Combine(dataDir, "settings.json");
         LoadSettings();

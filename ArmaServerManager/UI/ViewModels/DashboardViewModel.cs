@@ -14,7 +14,7 @@ public partial class DashboardViewModel : ViewModelBase
     private readonly ResourceMonitor _resourceMonitor;
     private readonly ServerManager _serverManager;
     private readonly NotificationService _notificationService;
-    private readonly LoggingService _logger;
+    private readonly ILogger _logger;
     private readonly UpdateService _updateService;
 
     [ObservableProperty]
@@ -37,7 +37,7 @@ public partial class DashboardViewModel : ViewModelBase
     private System.Threading.Timer? _updateTimer;
     
     public DashboardViewModel(ResourceMonitor resourceMonitor, ServerManager serverManager, 
-        NotificationService notificationService, LoggingService logger, UpdateService updateService)
+        NotificationService notificationService, ILogger logger, UpdateService updateService)
     {
         _resourceMonitor = resourceMonitor;
         _serverManager = serverManager;

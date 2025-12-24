@@ -2,15 +2,16 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace ArmaServerManager.Core;
 
 public class ConfigManager
 {
     private readonly string _configsPath;
-    private readonly LoggingService _logger;
+    private readonly ILogger _logger;
 
-    public ConfigManager(string configsPath, LoggingService logger)
+    public ConfigManager(string configsPath, ILogger logger)
     {
         _configsPath = string.IsNullOrEmpty(configsPath) ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Configs") : configsPath;
         _logger = logger;

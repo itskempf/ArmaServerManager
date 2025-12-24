@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace ArmaServerManager.Core;
 
@@ -14,8 +15,8 @@ public class ModManager
 {
     private const string Arma3AppId = "107410";
     private readonly string _modsPath;
-    private readonly SteamCMDHandler _steamCmdHandler;
-    private readonly LoggingService _logger;
+    private readonly ISteamCMDHandler _steamCmdHandler;
+    private readonly ILogger _logger;
     private readonly string _modsConfigPath;
     
     /// <summary>
@@ -29,7 +30,7 @@ public class ModManager
     /// <param name="modsPath">The root directory for mods.</param>
     /// <param name="steamCmdHandler">Handler for SteamCMD operations.</param>
     /// <param name="logger">Service for logging.</param>
-    public ModManager(string modsPath, SteamCMDHandler steamCmdHandler, LoggingService logger)
+    public ModManager(string modsPath, ISteamCMDHandler steamCmdHandler, ILogger logger)
     {
         _modsPath = string.IsNullOrEmpty(modsPath) ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Mods") : modsPath;
         _steamCmdHandler = steamCmdHandler;

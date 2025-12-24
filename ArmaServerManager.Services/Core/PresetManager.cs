@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace ArmaServerManager.Core;
 
@@ -15,7 +16,7 @@ public class PresetManager
 {
     private readonly string _presetsPath;
     private readonly ModManager _modManager;
-    private readonly LoggingService _logger;
+    private readonly ILogger _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PresetManager"/> class.
@@ -23,7 +24,7 @@ public class PresetManager
     /// <param name="presetsPath">The directory where presets are stored.</param>
     /// <param name="modManager">The manager for Arma mods.</param>
     /// <param name="logger">The service for logging.</param>
-    public PresetManager(string presetsPath, ModManager modManager, LoggingService logger)
+    public PresetManager(string presetsPath, ModManager modManager, ILogger logger)
     {
         _presetsPath = string.IsNullOrEmpty(presetsPath) ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Presets") : presetsPath;
         _modManager = modManager;
@@ -84,14 +85,14 @@ public class PresetManager
         {
             var html = new StringBuilder();
             // The HTML format is specifically structured for compatibility with the Arma 3 launcher.
-            html.AppendLine("<?xml version="1.0" encoding="utf-8"?>");
+            html.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
             html.AppendLine("<html>");
-            html.AppendLine($"<head><meta name=\"arma:Type\" content=\"preset"/><meta name=\"arma:PresetName\" content=\"{preset.Name}\" /></head>");
+            html.AppendLine("<head><meta name=\"arma:Type\" content=\"preset\"/><meta name=\"arma:PresetName\" content=\"" + preset.Name + "\" /></head>");
             html.AppendLine("<body>");
             
             foreach (var modId in preset.ModIds)
             {
-                html.AppendLine($"<tr data-type=\"ModContainer\"><td data-type=\"DisplayName\">{modId}</td><td data-type=\"Link\">http://steamcommunity.com/sharedfiles/filedetails/?id={modId}</td></tr>");
+                html.AppendLine("<tr data-type=\"ModContainer\"><td data-type=\"DisplayName\">" + modId + "</td><td data-type=\"Link\">http://steamcommunity.com/sharedfiles/filedetails/?id=" + modId + "</td></tr>");
             }
             
             html.AppendLine("</body></html>");
@@ -122,7 +123,7 @@ public class PresetManager
             var preset = new ModPreset();
             
             // Extract preset name from meta tag
-            var nameMatch = System.Text.RegularExpressions.Regex.Match(html, @"<meta name=\"arma:PresetName\" content=\"(.*?)\" />");
+            var nameMatch = System.Text.RegularExpressions.Regex.Match(html, "<meta name=\"arma:PresetName\" content=\"(.*?)\" />");
             if (nameMatch.Success)
             {
                 preset.Name = nameMatch.Groups[1].Value;
