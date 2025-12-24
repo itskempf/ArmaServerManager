@@ -16,8 +16,27 @@ public partial class App : Application
 
     public App()
     {
-        this.InitializeComponent();
-        Services = ConfigureServices();
+        try
+        {
+            this.InitializeComponent();
+            Services = ConfigureServices();
+        }
+        catch (Exception ex)
+        {
+            LogStartupError(ex);
+            throw;
+        }
+    }
+
+    private void LogStartupError(Exception ex)
+    {
+        try
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "startup_error.txt");
+            var message = $"[{DateTime.Now}] CRITICAL STARTUP ERROR:\n{ex}\nStack Trace:\n{ex.StackTrace}\n\n";
+            File.AppendAllText(path, message);
+        }
+        catch { /* Debugging fails, nothing to do */ }
     }
 
     private static IServiceProvider ConfigureServices()
@@ -151,17 +170,32 @@ public partial class App : Application
 
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-        _window = new MainWindow();
-        _window.Closed += OnWindowClosed;
-        _window.Activate();
-        
-        // Initialize async services
-        Task.Run(async () =>
+        try
         {
-            var pluginLoader = Services.GetService<PluginLoader>();
-            if (pluginLoader != null)
-                await pluginLoader.LoadPluginsAsync();
-        });
+            _window = new MainWindow();
+            _window.Closed += OnWindowClosed;
+            _window.Activate();
+            
+            // Initialize async services
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var pluginLoader = Services.GetService<PluginLoader>();
+                    if (pluginLoader != null)
+                        await pluginLoader.LoadPluginsAsync();
+                }
+                catch (Exception ex)
+                {
+                    LogStartupError(ex);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            LogStartupError(ex);
+            throw;
+        }
     }
     
     private void OnWindowClosed(object sender, WindowEventArgs args)
