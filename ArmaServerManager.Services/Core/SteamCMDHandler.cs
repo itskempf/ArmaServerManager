@@ -59,6 +59,13 @@ public class SteamCMDHandler : ISteamCMDHandler
             return new SteamCmdResult { Success = false, Error = error };
         }
 
+        if (installPath.Any(c => Path.GetInvalidPathChars().Contains(c)) || installPath.Contains('\"'))
+        {
+            var error = "Invalid install path. Path contains invalid characters or quotes.";
+            _logger.LogError(error);
+            return new SteamCmdResult { Success = false, Error = error };
+        }
+
         OutputReceived?.Invoke($"Installing Arma 3 server to: {installPath}");
         Directory.CreateDirectory(installPath);
         
@@ -79,6 +86,20 @@ public class SteamCMDHandler : ISteamCMDHandler
         {
             var error = "SteamCMD not found. Please configure SteamCMD path in Settings.";
             OutputReceived?.Invoke(error);
+            return new SteamCmdResult { Success = false, Error = error };
+        }
+
+        if (!long.TryParse(modId, out _))
+        {
+            var error = $"Invalid Mod ID: {modId}. Mod ID must be numeric.";
+            _logger.LogError(error);
+            return new SteamCmdResult { Success = false, Error = error };
+        }
+
+        if (installPath.Any(c => Path.GetInvalidPathChars().Contains(c)) || installPath.Contains('\"'))
+        {
+            var error = "Invalid install path. Path contains invalid characters or quotes.";
+            _logger.LogError(error);
             return new SteamCmdResult { Success = false, Error = error };
         }
 
